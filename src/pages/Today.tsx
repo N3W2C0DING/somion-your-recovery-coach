@@ -23,7 +23,14 @@ const Today = () => {
         <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">
           {new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}
         </p>
-        <h1 className="mt-1 font-display text-4xl md:text-5xl">Good morning.</h1>
+        <h1 className="mt-1 font-display text-4xl md:text-5xl">{(() => {
+          const h = new Date().getHours();
+          if (h < 5) return "Good night.";
+          if (h < 12) return "Good morning.";
+          if (h < 17) return "Good afternoon.";
+          if (h < 22) return "Good evening.";
+          return "Good night.";
+        })()}</h1>
       </header>
 
       <div className="grid gap-5 lg:grid-cols-3">
