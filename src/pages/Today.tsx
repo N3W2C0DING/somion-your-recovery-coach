@@ -4,12 +4,14 @@ import { AppShell } from "@/components/AppShell";
 import { GlassCard } from "@/components/GlassCard";
 import { ScoreRing } from "@/components/ScoreRing";
 import { Button } from "@/components/ui/button";
-import { last30, todayMetric, sorenessToday, getRecommendation, weeklyPlan } from "@/lib/somion-data";
+import { sorenessToday, getRecommendation, weeklyPlan } from "@/lib/somion-data";
 import { LineChart, Line, ResponsiveContainer, YAxis } from "recharts";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { useOuraMetrics } from "@/hooks/useOuraMetrics";
 
 const Today = () => {
+  const { last30, today: todayMetric, hasRealData } = useOuraMetrics();
   const rec = getRecommendation(todayMetric, sorenessToday);
   const [soreness, setSoreness] = useState(sorenessToday);
   const [energy, setEnergy] = useState(7);
