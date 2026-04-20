@@ -1,7 +1,10 @@
 import { NavLink, useLocation } from "react-router-dom";
-import { Home, Dumbbell, Activity, History, Settings, HeartPulse } from "lucide-react";
+import { Home, Dumbbell, Activity, History, Settings, HeartPulse, Unplug } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Logo } from "./Logo";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 const items = [
   { to: "/app", label: "Today", icon: Home, end: true },
@@ -13,7 +16,28 @@ const items = [
 
 export const AppShell = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
+  const { user } = useAuth();
   const current = items.find(i => i.end ? location.pathname === i.to : location.pathname.startsWith(i.to));
+
+  const [ouraStatus, setOuraStatus] = useState<{ connected: boolean; lastSync: string | null }>({ connected: false, lastSync: null });
+
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("oura_connections")
+        .select("last_synced_at")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (cancelled) return;
+      setOuraStatus({
+        connected: !!data,
+        lastSync: data?.last_synced_at ?? null,
+      });
+    })();
+    return () => { cancelled = true; };
+  }, [user]);
 
   return (
     <div className="min-h-screen w-full">
@@ -46,10 +70,20 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
           </nav>
           <div className="mt-auto rounded-xl border border-border/60 bg-secondary/40 p-4">
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <HeartPulse className="h-3.5 w-3.5 text-primary" />
-              Synced from Oura
+              {ouraStatus.connected ? (
+                <HeartPulse className="h-3.5 w-3.5 text-primary" />
+              ) : (
+                <Unplug className="h-3.5 w-3.5 text-muted-foreground" />
+              )}
+              {ouraStatus.connected ? "Synced from Oura" : "Oura not connected"}
             </div>
-            <div className="mt-1 text-xs text-foreground/80">Last sync · 6 min ago</div>
+            <div className="mt-1 text-xs text-foreground/80">
+              {ouraStatus.connected && ouraStatus.lastSync
+                ? `Last sync · ${new Date(ouraStatus.lastSync).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}`
+                : ouraStatus.connected
+                ? "Connected · awaiting first sync"
+                : "Connect in Settings"}
+            </div>
           </div>
         </aside>
 

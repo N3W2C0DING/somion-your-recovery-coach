@@ -1,22 +1,20 @@
 import { Link } from "react-router-dom";
-import { ArrowRight, BedDouble, Heart, Activity, Flame, Check, Circle } from "lucide-react";
+import { ArrowRight, BedDouble, Heart, Activity, Flame, Check, Circle, Save, Loader2 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { GlassCard } from "@/components/GlassCard";
 import { ScoreRing } from "@/components/ScoreRing";
 import { Button } from "@/components/ui/button";
-import { sorenessToday, weeklyPlan } from "@/lib/somion-data";
+import { weeklyPlan } from "@/lib/somion-data";
 import { LineChart, Line, ResponsiveContainer, YAxis } from "recharts";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { useOuraMetrics } from "@/hooks/useOuraMetrics";
 import { useDailySession } from "@/hooks/useDailySession";
-import { Loader2 } from "lucide-react";
+import { useJournalEntry } from "@/hooks/useJournalEntry";
 
 const Today = () => {
   const { last30, today: todayMetric, hasRealData } = useOuraMetrics();
-  const [soreness, setSoreness] = useState(sorenessToday);
-  const [energy, setEnergy] = useState(7);
-  const [motivation, setMotivation] = useState(7);
+  const { values, journal, hasEntry, saving, save, updateValue, savedAt } = useJournalEntry();
 
   const metrics = useMemo(
     () => ({
@@ -29,7 +27,7 @@ const Today = () => {
     }),
     [todayMetric, last30],
   );
-  const { session, loading: sessionLoading } = useDailySession(metrics);
+  const { session, loading: sessionLoading, regenerate, generating } = useDailySession(metrics, hasEntry ? journal : undefined);
 
   const intensity = session?.intensity ?? "moderate";
   const accent =
@@ -184,15 +182,51 @@ const Today = () => {
         {/* Journal check-in */}
         <GlassCard className="lg:col-span-2 p-6 animate-fade-up">
           <div className="flex items-center justify-between">
-            <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Morning check-in</span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Morning check-in</span>
+              {hasEntry && (
+                <span className="rounded-full bg-success/10 px-2 py-0.5 text-[10px] uppercase tracking-wider text-success ring-1 ring-success/30">
+                  Saved
+                </span>
+              )}
+            </div>
             <Flame className="h-4 w-4 text-primary" />
           </div>
-          <p className="mt-1 text-sm text-muted-foreground">Three quick reads. We'll fold them into today's plan.</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {hasEntry
+              ? `Logged ${savedAt ? new Date(savedAt).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" }) : "today"}. Update anytime — we'll regenerate your plan.`
+              : "Three quick reads. We'll fold them into today's plan."}
+          </p>
 
           <div className="mt-5 space-y-5">
-            <Slider label="Soreness" value={soreness} onChange={setSoreness} hint={soreness >= 7 ? "Significant" : soreness >= 4 ? "Mild" : "Minimal"} />
-            <Slider label="Energy" value={energy} onChange={setEnergy} hint={energy >= 7 ? "Sharp" : energy >= 4 ? "Steady" : "Foggy"} />
-            <Slider label="Motivation" value={motivation} onChange={setMotivation} hint={motivation >= 7 ? "Eager" : motivation >= 4 ? "Willing" : "Reluctant"} />
+            <Slider label="Soreness" value={values.soreness} onChange={(v) => updateValue("soreness", v)} hint={values.soreness >= 7 ? "Significant" : values.soreness >= 4 ? "Mild" : "Minimal"} />
+            <Slider label="Energy" value={values.energy} onChange={(v) => updateValue("energy", v)} hint={values.energy >= 7 ? "Sharp" : values.energy >= 4 ? "Steady" : "Foggy"} />
+            <Slider label="Motivation" value={values.motivation} onChange={(v) => updateValue("motivation", v)} hint={values.motivation >= 7 ? "Eager" : values.motivation >= 4 ? "Willing" : "Reluctant"} />
+          </div>
+
+          <div className="mt-5 flex items-center gap-3">
+            <Button
+              onClick={async () => {
+                const ok = await save();
+                if (ok) regenerate();
+              }}
+              disabled={saving || generating}
+              className="bg-gradient-moon text-primary-foreground hover:opacity-90"
+            >
+              {saving ? (
+                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving…</>
+              ) : (
+                <><Save className="mr-2 h-4 w-4" /> {hasEntry ? "Update & regenerate" : "Save check-in"}</>
+              )}
+            </Button>
+            {hasEntry && !generating && (
+              <span className="text-xs text-muted-foreground">Session reflects your check-in</span>
+            )}
+            {generating && (
+              <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                <Loader2 className="h-3 w-3 animate-spin" /> Regenerating session…
+              </span>
+            )}
           </div>
         </GlassCard>
 

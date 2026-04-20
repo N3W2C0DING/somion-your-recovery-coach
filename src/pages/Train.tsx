@@ -7,9 +7,11 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useOuraMetrics } from "@/hooks/useOuraMetrics";
 import { useDailySession } from "@/hooks/useDailySession";
+import { useJournalEntry } from "@/hooks/useJournalEntry";
 
 const Train = () => {
   const { today: todayMetric, last30 } = useOuraMetrics();
+  const { journal, hasEntry } = useJournalEntry();
   const metrics = useMemo(
     () => ({
       readiness: todayMetric.readiness,
@@ -22,7 +24,7 @@ const Train = () => {
     [todayMetric, last30],
   );
 
-  const { session, loading, generating, regenerate, markComplete } = useDailySession(metrics);
+  const { session, loading, generating, regenerate, markComplete } = useDailySession(metrics, hasEntry ? journal : undefined);
   const [shortened, setShortened] = useState(false);
   const [completed, setCompleted] = useState<Set<number>>(new Set());
 
