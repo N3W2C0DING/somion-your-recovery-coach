@@ -4,18 +4,50 @@ import { AppShell } from "@/components/AppShell";
 import { GlassCard } from "@/components/GlassCard";
 import { ScoreRing } from "@/components/ScoreRing";
 import { Button } from "@/components/ui/button";
-import { sorenessToday, getRecommendation, weeklyPlan } from "@/lib/somion-data";
+import { sorenessToday, weeklyPlan } from "@/lib/somion-data";
 import { LineChart, Line, ResponsiveContainer, YAxis } from "recharts";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
 import { useOuraMetrics } from "@/hooks/useOuraMetrics";
+import { useDailySession } from "@/hooks/useDailySession";
+import { Loader2 } from "lucide-react";
 
 const Today = () => {
   const { last30, today: todayMetric, hasRealData } = useOuraMetrics();
-  const rec = getRecommendation(todayMetric, sorenessToday);
   const [soreness, setSoreness] = useState(sorenessToday);
   const [energy, setEnergy] = useState(7);
   const [motivation, setMotivation] = useState(7);
+
+  const metrics = useMemo(
+    () => ({
+      readiness: todayMetric.readiness,
+      sleepScore: todayMetric.sleepScore,
+      sleepHours: todayMetric.sleepHours,
+      hrv: todayMetric.hrv,
+      rhr: todayMetric.rhr,
+      hrvTrend: last30.slice(-7).map((d) => d.hrv),
+    }),
+    [todayMetric, last30],
+  );
+  const { session, loading: sessionLoading } = useDailySession(metrics);
+
+  const intensity = session?.intensity ?? "moderate";
+  const accent =
+    intensity === "high"
+      ? "text-success"
+      : intensity === "moderate"
+      ? "text-primary"
+      : intensity === "low"
+      ? "text-warning"
+      : "text-danger";
+  const dot =
+    intensity === "high"
+      ? "bg-success"
+      : intensity === "moderate"
+      ? "bg-primary"
+      : intensity === "low"
+      ? "bg-warning"
+      : "bg-danger";
 
   const trend = last30.slice(-14).map(d => ({ v: d.readiness }));
 
@@ -42,21 +74,31 @@ const Today = () => {
         {/* Recommendation hero */}
         <GlassCard strong className="lg:col-span-2 p-7 md:p-9 animate-fade-up">
           <div className="flex items-center gap-2">
-            <span className={cn("inline-block h-2 w-2 rounded-full", rec.intensity === "high" ? "bg-success" : rec.intensity === "moderate" ? "bg-primary" : rec.intensity === "low" ? "bg-warning" : "bg-danger")} />
+            <span className={cn("inline-block h-2 w-2 rounded-full", dot)} />
             <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Today's recommendation</span>
           </div>
-          <h2 className={cn("mt-3 font-display text-4xl md:text-5xl", rec.accent)}>{rec.label}</h2>
-          <p className="mt-2 max-w-md text-muted-foreground">{rec.focus} · ~{rec.durationMin} min</p>
+          {sessionLoading || !session ? (
+            <div className="mt-4 flex items-center gap-2 text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" /> Designing your session…
+            </div>
+          ) : (
+            <>
+              <h2 className={cn("mt-3 font-display text-4xl md:text-5xl", accent)}>{session.recovery_label}</h2>
+              <p className="mt-2 max-w-md text-muted-foreground">
+                {session.focus} · ~{session.duration_minutes} min
+              </p>
 
-          <div className="mt-6 grid gap-2 text-sm text-foreground/80">
-            <div className="text-xs uppercase tracking-wider text-muted-foreground">Why this recommendation</div>
-            {rec.why.map((w, i) => (
-              <div key={i} className="flex items-start gap-2">
-                <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
-                <span>{w}</span>
+              <div className="mt-6 grid gap-2 text-sm text-foreground/80">
+                <div className="text-xs uppercase tracking-wider text-muted-foreground">Why this recommendation</div>
+                {session.exercises?.why?.map((w, i) => (
+                  <div key={i} className="flex items-start gap-2">
+                    <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
+                    <span>{w}</span>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            </>
+          )}
 
           <Button asChild className="mt-7 bg-gradient-moon text-primary-foreground hover:opacity-90">
             <Link to="/app/train">See today's session <ArrowRight className="ml-1 h-4 w-4" /></Link>
