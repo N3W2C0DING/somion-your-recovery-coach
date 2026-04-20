@@ -66,8 +66,10 @@ const steps: Step[] = [
 
 const Onboarding = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [stepIdx, setStepIdx] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
+  const [saving, setSaving] = useState(false);
   const step = steps[stepIdx];
 
   const select = (opt: string) => {
@@ -88,12 +90,42 @@ const Onboarding = () => {
     ? ((answers[step.key] as string[])?.length ?? 0) > 0
     : !!answers[step.key];
 
-  const next = () => {
-    if (stepIdx < steps.length - 1) setStepIdx(stepIdx + 1);
-    else {
+  const finish = async () => {
+    if (!user) {
+      toast.error("Please sign in first");
+      navigate("/auth");
+      return;
+    }
+    setSaving(true);
+    try {
+      const equipment = (answers.equipment as string[]) ?? [];
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          goal: answers.goal as string,
+          experience: answers.experience as string,
+          split: answers.split as string,
+          equipment,
+          training_days: answers.days as string,
+          session_length: answers.length as string,
+          coaching_tone: answers.tone as string,
+          soreness_baseline: answers.soreness as string,
+          onboarding_complete: true,
+        })
+        .eq("user_id", user.id);
+      if (error) throw error;
       toast.success("Your plan is ready");
       navigate("/app");
+    } catch (err: any) {
+      toast.error(err.message ?? "Could not save your answers");
+    } finally {
+      setSaving(false);
     }
+  };
+
+  const next = () => {
+    if (stepIdx < steps.length - 1) setStepIdx(stepIdx + 1);
+    else finish();
   };
 
   const progress = ((stepIdx + 1) / steps.length) * 100;
@@ -155,10 +187,10 @@ const Onboarding = () => {
           </Button>
           <Button
             onClick={next}
-            disabled={!canNext}
+            disabled={!canNext || saving}
             className="bg-gradient-moon text-primary-foreground hover:opacity-90"
           >
-            {stepIdx === steps.length - 1 ? "Finish" : "Continue"} <ArrowRight className="ml-1 h-4 w-4" />
+            {saving ? "Saving…" : stepIdx === steps.length - 1 ? "Finish" : "Continue"} <ArrowRight className="ml-1 h-4 w-4" />
           </Button>
         </div>
       </div>
