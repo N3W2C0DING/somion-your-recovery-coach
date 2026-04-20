@@ -13,6 +13,7 @@ import Train from "./pages/Train.tsx";
 import Recovery from "./pages/Recovery.tsx";
 import History from "./pages/History.tsx";
 import Settings from "./pages/Settings.tsx";
+import ResetPassword from "./pages/ResetPassword.tsx";
 import PrivacyPolicy from "./pages/legal/PrivacyPolicy.tsx";
 import TermsOfService from "./pages/legal/TermsOfService.tsx";
 import HealthDisclaimer from "./pages/legal/HealthDisclaimer.tsx";
@@ -30,6 +31,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
           <Route path="/app" element={<ProtectedRoute><Today /></ProtectedRoute>} />
           <Route path="/app/train" element={<ProtectedRoute><Train /></ProtectedRoute>} />

@@ -28,7 +28,7 @@ const GoogleLogo = ({ className }: { className?: string }) => (
 const Auth = () => {
   const navigate = useNavigate();
   const { session } = useAuth();
-  const [mode, setMode] = useState<"signin" | "signup">("signup");
+  const [mode, setMode] = useState<"signin" | "signup" | "forgot">("signup");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -45,6 +45,26 @@ const Auth = () => {
       },
     });
     if (error) toast.error(error.message);
+  };
+
+  const sendResetEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) {
+      toast.error("Please enter your email address");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) throw error;
+      toast.success("Check your email for a password reset link");
+    } catch (err: any) {
+      toast.error(err.message ?? "Something went wrong");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const submit = async (e: React.FormEvent) => {
@@ -88,12 +108,18 @@ const Auth = () => {
 
         <GlassCard strong className="p-8">
           <h1 className="font-display text-3xl">
-            {mode === "signup" ? "Create your account" : "Welcome back"}
+            {mode === "forgot" ? "Reset your password" : mode === "signup" ? "Create your account" : "Welcome back"}
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            {mode === "signup" ? "A calmer way to train. Start in two minutes." : "Sign in to see today's recommendation."}
+            {mode === "forgot"
+              ? "Enter your email and we'll send you a reset link."
+              : mode === "signup"
+              ? "A calmer way to train. Start in two minutes."
+              : "Sign in to see today's recommendation."}
           </p>
 
+          {mode !== "forgot" && (
+          <>
           {/* Social login buttons */}
           <div className="mt-6 grid gap-3">
             <Button
@@ -124,6 +150,34 @@ const Auth = () => {
               <span className="bg-card px-3 text-muted-foreground">or continue with email</span>
             </div>
           </div>
+          </>
+          )}
+
+          {mode === "forgot" ? (
+            <form onSubmit={sendResetEmail} className="mt-6 space-y-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="email">Email</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    id="email"
+                    type="email"
+                    autoComplete="email"
+                    placeholder="you@somion.app"
+                    className="pl-9"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
+                </div>
+              </div>
+              <Button type="submit" disabled={submitting} className="w-full bg-gradient-moon text-primary-foreground hover:opacity-90">
+                {submitting ? "Sending…" : "Send reset link"} <ArrowRight className="ml-1 h-4 w-4" />
+              </Button>
+              <div className="text-center">
+                <button onClick={() => setMode("signin")} className="text-sm text-primary underline-offset-4 hover:underline">Back to sign in</button>
+              </div>
+            </form>
+          ) : (
 
           <form onSubmit={submit} className="space-y-4">
             <div className="space-y-1.5">
@@ -157,8 +211,16 @@ const Auth = () => {
             <Button type="submit" disabled={submitting} className="w-full bg-gradient-moon text-primary-foreground hover:opacity-90">
               {submitting ? "Please wait…" : mode === "signup" ? "Create account" : "Sign in"} <ArrowRight className="ml-1 h-4 w-4" />
             </Button>
-          </form>
 
+            {mode === "signin" && (
+              <div className="text-center">
+                <button onClick={() => setMode("forgot")} className="text-xs text-muted-foreground underline-offset-4 hover:text-primary hover:underline">Forgot your password?</button>
+              </div>
+            )}
+          </form>
+          )}
+
+          {mode !== "forgot" && (
           <div className="mt-6 text-center text-sm text-muted-foreground">
             {mode === "signup" ? (
               <>Already have an account?{" "}
@@ -170,6 +232,7 @@ const Auth = () => {
               </>
             )}
           </div>
+          )}
         </GlassCard>
 
         <p className="mt-6 text-center text-xs text-muted-foreground">
