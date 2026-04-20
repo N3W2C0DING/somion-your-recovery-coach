@@ -1,12 +1,13 @@
 import { AppShell } from "@/components/AppShell";
 import { GlassCard } from "@/components/GlassCard";
-import { last30 } from "@/lib/somion-data";
+import type { DayMetric } from "@/lib/somion-data";
+import { useOuraMetrics } from "@/hooks/useOuraMetrics";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
-const TrendChart = ({ dataKey, color, domain }: { dataKey: keyof typeof last30[number]; color: string; domain?: [number, number] }) => (
+const TrendChart = ({ data, dataKey, color, domain }: { data: DayMetric[]; dataKey: keyof DayMetric; color: string; domain?: [number, number] }) => (
   <div className="h-48 w-full">
     <ResponsiveContainer>
-      <AreaChart data={last30} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
+      <AreaChart data={data} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
         <defs>
           <linearGradient id={`g-${dataKey}`} x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor={color} stopOpacity={0.4} />
@@ -34,12 +35,15 @@ const cards = [
 ];
 
 const Recovery = () => {
+  const { last30, hasRealData } = useOuraMetrics();
   return (
     <AppShell>
       <header className="mb-8 animate-fade-up">
         <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Last 30 days</p>
         <h1 className="mt-1 font-display text-4xl md:text-5xl">Recovery</h1>
-        <p className="mt-2 text-muted-foreground">Patterns matter more than any single number.</p>
+        <p className="mt-2 text-muted-foreground">
+          {hasRealData ? "Your Oura data, last 30 days." : "Sample data — connect Oura in Settings to see your own."}
+        </p>
       </header>
 
       <div className="grid gap-5 md:grid-cols-2">
@@ -51,7 +55,7 @@ const Recovery = () => {
             </div>
             <p className="text-xs text-muted-foreground">{c.sub}</p>
             <div className="mt-4">
-              <TrendChart dataKey={c.key as any} color={c.color} domain={c.domain} />
+              <TrendChart data={last30} dataKey={c.key as any} color={c.color} domain={c.domain} />
             </div>
           </GlassCard>
         ))}
