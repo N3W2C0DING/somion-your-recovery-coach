@@ -33,6 +33,9 @@ const Today = () => {
           if (h < 22) return "Good evening.";
           return "Good night.";
         })()}</h1>
+        <p className="mt-2 text-xs text-muted-foreground">
+          {hasRealData ? "Live Oura data" : "Sample data — connect Oura in Settings"}
+        </p>
       </header>
 
       <div className="grid gap-5 lg:grid-cols-3">
