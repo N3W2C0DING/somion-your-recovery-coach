@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowRight, Mail } from "lucide-react";
 import { Logo } from "@/components/Logo";
@@ -7,22 +7,49 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 const Auth = () => {
   const navigate = useNavigate();
+  const { session } = useAuth();
   const [mode, setMode] = useState<"signin" | "signup">("signup");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-  const submit = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (session) navigate("/app", { replace: true });
+  }, [session, navigate]);
+
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
       toast.error("Please enter your email and password");
       return;
     }
-    toast.success(mode === "signup" ? "Welcome to Somion" : "Welcome back");
-    // Mock auth — route to onboarding for signup, dashboard for signin
-    navigate(mode === "signup" ? "/onboarding" : "/app");
+    setSubmitting(true);
+    try {
+      if (mode === "signup") {
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: { emailRedirectTo: `${window.location.origin}/app` },
+        });
+        if (error) throw error;
+        toast.success("Welcome to Somion");
+        navigate("/onboarding");
+      } else {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        toast.success("Welcome back");
+        navigate("/app");
+      }
+    } catch (err: any) {
+      toast.error(err.message ?? "Something went wrong");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -71,8 +98,8 @@ const Auth = () => {
               />
             </div>
 
-            <Button type="submit" className="w-full bg-gradient-moon text-primary-foreground hover:opacity-90">
-              {mode === "signup" ? "Create account" : "Sign in"} <ArrowRight className="ml-1 h-4 w-4" />
+            <Button type="submit" disabled={submitting} className="w-full bg-gradient-moon text-primary-foreground hover:opacity-90">
+              {submitting ? "Please wait…" : mode === "signup" ? "Create account" : "Sign in"} <ArrowRight className="ml-1 h-4 w-4" />
             </Button>
           </form>
 

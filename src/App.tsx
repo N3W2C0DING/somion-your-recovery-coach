@@ -3,6 +3,7 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import Auth from "./pages/Auth.tsx";
@@ -24,12 +25,12 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
-          <Route path="/onboarding" element={<Onboarding />} />
-          <Route path="/app" element={<Today />} />
-          <Route path="/app/train" element={<Train />} />
-          <Route path="/app/recovery" element={<Recovery />} />
-          <Route path="/app/history" element={<History />} />
-          <Route path="/app/settings" element={<Settings />} />
+          <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
+          <Route path="/app" element={<ProtectedRoute><Today /></ProtectedRoute>} />
+          <Route path="/app/train" element={<ProtectedRoute><Train /></ProtectedRoute>} />
+          <Route path="/app/recovery" element={<ProtectedRoute><Recovery /></ProtectedRoute>} />
+          <Route path="/app/history" element={<ProtectedRoute><History /></ProtectedRoute>} />
+          <Route path="/app/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
@@ -39,3 +40,4 @@ const App = () => (
 );
 
 export default App;
+

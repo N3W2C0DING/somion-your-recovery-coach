@@ -1,23 +1,127 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { AppShell } from "@/components/AppShell";
 import { GlassCard } from "@/components/GlassCard";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Check, Link2, Unlink } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Check, Link2, Unlink, LogOut, ExternalLink, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
-const tones = ["Calm & quiet", "Direct & clear", "Warm & encouraging", "Minimal — just data"] as const;
-const goals = ["Build muscle", "Lose fat", "Cardio fitness", "Wellness"] as const;
+const tones = ["Calm & quiet", "Direct & clear", "Warm & encouraging", "Minimal — just the data"] as const;
+const goals = ["Build muscle", "Lose fat", "Cardio fitness", "Wellness & longevity"] as const;
 
 const Settings = () => {
-  const [oura, setOura] = useState(true);
-  const [tone, setTone] = useState<typeof tones[number]>("Calm & quiet");
-  const [goal, setGoal] = useState<typeof goals[number]>("Build muscle");
+  const navigate = useNavigate();
+  const { user, signOut } = useAuth();
+  const [profile, setProfile] = useState<any>(null);
+  const [tone, setTone] = useState<string>("Calm & quiet");
+  const [goal, setGoal] = useState<string>("Build muscle");
   const [morningPing, setMorningPing] = useState(true);
   const [restNudge, setRestNudge] = useState(true);
   const [weeklySummary, setWeeklySummary] = useState(false);
+
+  // Oura state
+  const [ouraConnected, setOuraConnected] = useState(false);
+  const [lastSync, setLastSync] = useState<string | null>(null);
+  const [token, setToken] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+    (async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (data) {
+        setProfile(data);
+        if (data.coaching_tone) setTone(data.coaching_tone);
+        if (data.goal) setGoal(data.goal);
+      }
+      const { data: conn } = await supabase
+        .from("oura_connections")
+        .select("connected_at, last_synced_at")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      setOuraConnected(!!conn);
+      setLastSync(conn?.last_synced_at ?? null);
+    })();
+  }, [user]);
+
+  const saveTone = async (next: string) => {
+    setTone(next);
+    if (user) await supabase.from("profiles").update({ coaching_tone: next }).eq("user_id", user.id);
+  };
+  const saveGoal = async (next: string) => {
+    setGoal(next);
+    if (user) await supabase.from("profiles").update({ goal: next }).eq("user_id", user.id);
+  };
+
+  const connectOura = async () => {
+    if (!token.trim()) {
+      toast.error("Paste your Oura Personal Access Token first");
+      return;
+    }
+    setBusy(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("oura-sync", {
+        body: { token: token.trim() },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast.success(`Oura connected · ${data.days_synced ?? 0} days synced`);
+      setOuraConnected(true);
+      setLastSync(new Date().toISOString());
+      setToken("");
+    } catch (err: any) {
+      toast.error(err.message ?? "Could not connect Oura");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const resync = async () => {
+    setBusy(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("oura-sync", { body: {} });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast.success(`Synced · ${data.days_synced ?? 0} days`);
+      setLastSync(new Date().toISOString());
+    } catch (err: any) {
+      toast.error(err.message ?? "Sync failed");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const disconnectOura = async () => {
+    setBusy(true);
+    try {
+      const { error } = await supabase.functions.invoke("oura-disconnect", { body: {} });
+      if (error) throw error;
+      setOuraConnected(false);
+      setLastSync(null);
+      toast("Oura disconnected");
+    } catch (err: any) {
+      toast.error(err.message ?? "Could not disconnect");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/");
+  };
+
+  const initial = (profile?.display_name ?? user?.email ?? "?").charAt(0).toUpperCase();
 
   return (
     <AppShell>
@@ -31,39 +135,77 @@ const Settings = () => {
         <GlassCard className="p-6 animate-fade-up">
           <h3 className="font-display text-2xl">Profile</h3>
           <div className="mt-4 flex items-center gap-4">
-            <div className="grid h-14 w-14 place-items-center rounded-full bg-gradient-moon text-xl font-medium text-primary-foreground">A</div>
+            <div className="grid h-14 w-14 place-items-center rounded-full bg-gradient-moon text-xl font-medium text-primary-foreground">
+              {initial}
+            </div>
             <div>
-              <div>Alex Carter</div>
-              <div className="text-sm text-muted-foreground">alex@somion.app</div>
+              <div>{profile?.display_name ?? "—"}</div>
+              <div className="text-sm text-muted-foreground">{user?.email}</div>
             </div>
           </div>
-          <Button variant="ghost" size="sm" className="mt-4">Edit profile</Button>
+          <Button variant="ghost" size="sm" className="mt-4" onClick={handleSignOut}>
+            <LogOut className="mr-2 h-4 w-4" /> Sign out
+          </Button>
         </GlassCard>
 
         {/* Oura */}
-        <GlassCard className={cn("p-6 animate-fade-up", oura && "ring-1 ring-primary/30")}>
+        <GlassCard className={cn("p-6 animate-fade-up", ouraConnected && "ring-1 ring-primary/30")}>
           <div className="flex items-center justify-between">
             <h3 className="font-display text-2xl">Oura Ring</h3>
             <span className={cn(
               "rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wider",
-              oura ? "bg-success/10 text-success ring-1 ring-success/30" : "bg-muted text-muted-foreground ring-1 ring-border"
+              ouraConnected ? "bg-success/10 text-success ring-1 ring-success/30" : "bg-muted text-muted-foreground ring-1 ring-border"
             )}>
-              {oura ? "Connected" : "Disconnected"}
+              {ouraConnected ? "Connected" : "Disconnected"}
             </span>
           </div>
-          <p className="mt-2 text-sm text-muted-foreground">
-            {oura ? "Last sync · 6 minutes ago" : "Connect your Oura to unlock daily recommendations."}
-          </p>
-          <Button
-            className={cn("mt-4", oura ? "" : "bg-gradient-moon text-primary-foreground hover:opacity-90")}
-            variant={oura ? "outline" : "default"}
-            onClick={() => {
-              setOura(!oura);
-              toast(oura ? "Oura disconnected" : "Oura connected");
-            }}
-          >
-            {oura ? <><Unlink className="mr-2 h-4 w-4" /> Disconnect</> : <><Link2 className="mr-2 h-4 w-4" /> Connect Oura</>}
-          </Button>
+
+          {ouraConnected ? (
+            <>
+              <p className="mt-2 text-sm text-muted-foreground">
+                {lastSync ? `Last sync · ${new Date(lastSync).toLocaleString()}` : "Connected · awaiting first sync"}
+              </p>
+              <div className="mt-4 flex gap-2">
+                <Button variant="outline" size="sm" onClick={resync} disabled={busy}>
+                  <RefreshCw className={cn("mr-2 h-4 w-4", busy && "animate-spin")} /> Sync now
+                </Button>
+                <Button variant="ghost" size="sm" onClick={disconnectOura} disabled={busy}>
+                  <Unlink className="mr-2 h-4 w-4" /> Disconnect
+                </Button>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Paste your Oura Personal Access Token. It's stored securely server-side and never exposed to the browser.
+              </p>
+              <a
+                href="https://cloud.ouraring.com/personal-access-tokens"
+                target="_blank"
+                rel="noreferrer"
+                className="mt-2 inline-flex items-center gap-1 text-xs text-primary hover:underline"
+              >
+                Generate a token <ExternalLink className="h-3 w-3" />
+              </a>
+              <div className="mt-3 space-y-2">
+                <Label htmlFor="oura-token" className="text-xs">Personal Access Token</Label>
+                <Input
+                  id="oura-token"
+                  type="password"
+                  placeholder="OURA_..."
+                  value={token}
+                  onChange={(e) => setToken(e.target.value)}
+                />
+                <Button
+                  className="bg-gradient-moon text-primary-foreground hover:opacity-90"
+                  onClick={connectOura}
+                  disabled={busy}
+                >
+                  <Link2 className="mr-2 h-4 w-4" /> {busy ? "Connecting…" : "Connect Oura"}
+                </Button>
+              </div>
+            </>
+          )}
         </GlassCard>
 
         {/* Goals */}
@@ -73,7 +215,7 @@ const Settings = () => {
             {goals.map(g => (
               <button
                 key={g}
-                onClick={() => setGoal(g)}
+                onClick={() => saveGoal(g)}
                 className={cn(
                   "flex items-center justify-between rounded-xl border px-3 py-2.5 text-sm transition-all",
                   goal === g ? "border-primary/60 bg-primary/10" : "border-border bg-secondary/40 hover:bg-secondary/70"
@@ -93,7 +235,7 @@ const Settings = () => {
             {tones.map(t => (
               <button
                 key={t}
-                onClick={() => setTone(t)}
+                onClick={() => saveTone(t)}
                 className={cn(
                   "flex w-full items-center justify-between rounded-xl border px-3 py-2.5 text-sm transition-all",
                   tone === t ? "border-primary/60 bg-primary/10" : "border-border bg-secondary/40 hover:bg-secondary/70"
