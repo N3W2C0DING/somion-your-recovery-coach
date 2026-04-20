@@ -70,7 +70,7 @@ const Today = () => {
         <GlassCard className="p-6 animate-fade-up">
           <div className="flex items-center justify-between">
             <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Sleep</span>
-            <Moon className="h-4 w-4 text-primary" />
+            <BedDouble className="h-4 w-4 text-primary" />
           </div>
           <div className="mt-3 flex items-end gap-2">
             <span className="font-display text-4xl">{todayMetric.sleepHours}</span>
