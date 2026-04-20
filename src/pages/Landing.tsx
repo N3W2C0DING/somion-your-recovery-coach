@@ -1,15 +1,15 @@
 import { Link } from "react-router-dom";
-import { ArrowRight, Moon, Activity, Brain, Sparkles, ShieldCheck } from "lucide-react";
-import heroMoon from "@/assets/hero-moon.jpg";
+import { ArrowRight, HeartPulse, Activity, Brain, Sparkles, ShieldCheck } from "lucide-react";
+import heroPulse from "@/assets/hero-pulse.jpg";
 import { Logo } from "@/components/Logo";
 import { GlassCard } from "@/components/GlassCard";
 import { Button } from "@/components/ui/button";
 
 const features = [
   {
-    icon: Moon,
-    title: "Reads your night",
-    body: "Sleep score, HRV, resting heart rate, and total sleep — pulled directly from your Oura Ring.",
+    icon: HeartPulse,
+    title: "Reads your signals",
+    body: "Sleep, HRV, resting heart rate, and recovery — pulled directly from your Oura Ring.",
   },
   {
     icon: Brain,
@@ -45,11 +45,11 @@ const Landing = () => {
       <header className="relative">
         <div className="absolute inset-0 -z-10">
           <img
-            src={heroMoon}
+            src={heroPulse}
             alt=""
             width={1920}
             height={1080}
-            className="h-full w-full object-cover opacity-50"
+            className="h-full w-full object-cover opacity-40"
           />
           <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/70 to-background" />
         </div>

@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { ArrowRight, Moon, Heart, Activity, Flame, Check, Circle } from "lucide-react";
+import { ArrowRight, BedDouble, Heart, Activity, Flame, Check, Circle } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { GlassCard } from "@/components/GlassCard";
 import { ScoreRing } from "@/components/ScoreRing";

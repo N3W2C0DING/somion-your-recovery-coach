@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from "react-router-dom";
-import { Home, Dumbbell, Activity, History, Settings, Moon } from "lucide-react";
+import { Home, Dumbbell, Activity, History, Settings, HeartPulse } from "lucide-react";
 import { Logo } from "./Logo";
 import { cn } from "@/lib/utils";
 
@@ -46,7 +46,7 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
           </nav>
           <div className="mt-auto rounded-xl border border-border/60 bg-secondary/40 p-4">
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <Moon className="h-3.5 w-3.5 text-primary" />
+              <HeartPulse className="h-3.5 w-3.5 text-primary" />
               Synced from Oura
             </div>
             <div className="mt-1 text-xs text-foreground/80">Last sync · 6 min ago</div>
