@@ -175,6 +175,11 @@ const Landing = () => {
       <footer className="border-t border-border/40 py-10">
         <div className="container flex flex-col items-center justify-between gap-4 text-xs text-muted-foreground md:flex-row">
           <Logo />
+          <div className="flex flex-wrap items-center gap-4">
+            <Link to="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link>
+            <Link to="/terms" className="hover:text-foreground transition-colors">Terms of Service</Link>
+            <Link to="/health-disclaimer" className="hover:text-foreground transition-colors">Health Disclaimer</Link>
+          </div>
           <div>© {new Date().getFullYear()} Somion. Train with your recovery.</div>
         </div>
       </footer>

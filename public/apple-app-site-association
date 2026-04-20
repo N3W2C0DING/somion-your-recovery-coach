@@ -1,0 +1,14 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "TEAMID.app.somion.coach",
+        "paths": ["/app/*", "/auth", "/onboarding"]
+      }
+    ]
+  },
+  "webcredentials": {
+    "apps": ["TEAMID.app.somion.coach"]
+  }
+}

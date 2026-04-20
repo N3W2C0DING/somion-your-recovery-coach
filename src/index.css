@@ -168,3 +168,13 @@
   0%, 100% { box-shadow: 0 0 40px hsl(210 80% 60% / 0.2); }
   50% { box-shadow: 0 0 80px hsl(210 80% 60% / 0.4); }
 }
+
+/* iOS safe areas for notch / home indicator / island */
+@supports (padding: env(safe-area-inset-top)) {
+  body {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+}

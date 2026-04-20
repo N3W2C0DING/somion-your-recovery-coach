@@ -1,0 +1,16 @@
+{
+  "name": "Somion — Recovery Coach",
+  "short_name": "Somion",
+  "description": "Train with your recovery, not against it. Personalized daily training powered by your Oura Ring.",
+  "start_url": "/app",
+  "display": "standalone",
+  "background_color": "#0a1020",
+  "theme_color": "#0a1020",
+  "orientation": "portrait-primary",
+  "categories": ["health", "fitness"],
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

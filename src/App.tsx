@@ -13,6 +13,11 @@ import Train from "./pages/Train.tsx";
 import Recovery from "./pages/Recovery.tsx";
 import History from "./pages/History.tsx";
 import Settings from "./pages/Settings.tsx";
+import PrivacyPolicy from "./pages/legal/PrivacyPolicy.tsx";
+import TermsOfService from "./pages/legal/TermsOfService.tsx";
+import HealthDisclaimer from "./pages/legal/HealthDisclaimer.tsx";
+import Support from "./pages/legal/Support.tsx";
+import AccountDeletion from "./pages/legal/AccountDeletion.tsx";
 
 const queryClient = new QueryClient();
 
@@ -31,6 +36,11 @@ const App = () => (
           <Route path="/app/recovery" element={<ProtectedRoute><Recovery /></ProtectedRoute>} />
           <Route path="/app/history" element={<ProtectedRoute><History /></ProtectedRoute>} />
           <Route path="/app/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/terms" element={<TermsOfService />} />
+          <Route path="/health-disclaimer" element={<HealthDisclaimer />} />
+          <Route path="/support" element={<Support />} />
+          <Route path="/account-deletion" element={<AccountDeletion />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
